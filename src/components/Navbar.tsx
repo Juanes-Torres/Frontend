@@ -41,6 +41,12 @@ export default function Navbar() {
             </NavLink>
           )}
 
+          {esAdmin && (
+            <NavLink to="/admin/usuarios">
+              Usuarios
+            </NavLink>
+          )}
+
           {(esAdmin || esVendedor) && (
             <NavLink to="/inventario">
               Inventario
