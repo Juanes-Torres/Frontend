@@ -839,6 +839,35 @@ h2 {
   color: var(--texto);
 }
 
+.formulario fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  margin: 0;
+  padding: 18px;
+
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+
+.formulario legend {
+  padding: 0 6px;
+
+  color: var(--primario);
+
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.texto-ayuda {
+  margin: -12px 0 20px;
+  color: var(--texto-secundario);
+  font-size: 0.92rem;
+}
+
 .formulario-linea,
 .filtros {
   display: flex;
