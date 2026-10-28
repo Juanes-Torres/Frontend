@@ -16,10 +16,8 @@ RUN npm ci
 
 COPY . .
 
-# Dirección del backend que usará el NAVEGADOR. Vite la escribe dentro de la
-# página al compilar, por eso se pasa aquí y no al arrancar el contenedor.
-ARG VITE_API_URL=http://localhost:8080
-ENV VITE_API_URL=$VITE_API_URL
+# La compilación NO lleva la dirección del backend: la imagen es la misma para
+# todos los entornos. La configuración llega al arrancar (factor III).
 RUN npm run build
 
 # ---------- Etapa 2: servir con nginx ----------
@@ -27,4 +25,8 @@ FROM nginx:1.29-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=compilacion /build/dist /usr/share/nginx/html
 
+# Al arrancar, este script escribe config.js con las variables de entorno
+COPY --chmod=755 docker/40-kairos-config.sh /docker-entrypoint.d/40-kairos-config.sh
+
 EXPOSE 80
+# Ejecutar:  docker run -p 8081:80 -e API_URL=http://localhost:8080 kairos-frontend
