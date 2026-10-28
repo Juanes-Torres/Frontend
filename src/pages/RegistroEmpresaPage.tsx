@@ -34,7 +34,7 @@ export default function RegistroEmpresaPage() {
     setError(null);
     setCargando(true);
     try {
-      const empresa = await empresasApi.registrar({                // POST /api/empresas → 201
+      const respuesta = await empresasApi.registrar({              // POST /api/empresas → 201
         nombre: form.nombre,
         nit: form.nit,
         email: form.email,
@@ -46,7 +46,7 @@ export default function RegistroEmpresaPage() {
           telefono: form.adminTelefono,
         },
       });
-      setRegistrada(empresa);
+      setRegistrada(respuesta.empresa);                            // llega { empresa, administrador, mensaje }
     } catch (err) {
       setError(err);                                               // 400 (campos) o 409 (NIT o email repetido)
     } finally {
@@ -77,7 +77,7 @@ export default function RegistroEmpresaPage() {
       <form onSubmit={enviar} className="formulario">
         <fieldset>
           <legend>Datos de la empresa</legend>
-          <label>Razón social<input value={form.nombre} onChange={(e) => cambiar("nombre", e.target.value)} maxLength={100} required /></label>
+          <label>Razón social<input value={form.nombre} onChange={(e) => cambiar("nombre", e.target.value)} maxLength={150} required /></label>
           <label>NIT<input value={form.nit} onChange={(e) => cambiar("nit", e.target.value)} placeholder="900123456-7" maxLength={20} required /></label>
           <label>Email de la empresa<input type="email" value={form.email} onChange={(e) => cambiar("email", e.target.value)} maxLength={100} required /></label>
           <label>Teléfono<input value={form.telefono} onChange={(e) => cambiar("telefono", e.target.value)} maxLength={20} /></label>

@@ -1,6 +1,6 @@
 // Servicio de consumo de API: empresas (multiempresa)
 import { apiFetch, json } from "./client";
-import type { Empresa } from "../types";
+import type { Empresa, Usuario } from "../types";
 
 export interface RegistroEmpresaRequest {
   nombre: string;
@@ -15,8 +15,14 @@ export interface RegistroEmpresaRequest {
   };
 }
 
+export interface RegistroEmpresaResponse {
+  empresa: Empresa;
+  administrador: Usuario;
+  mensaje: string;
+}
+
 export const empresasApi = {
   // Público: crea la empresa (PENDIENTE) y su ADMINISTRADOR en una sola operación
   registrar: (datos: RegistroEmpresaRequest) =>
-    apiFetch<Empresa>("/api/empresas", { method: "POST", body: json(datos) }),
+    apiFetch<RegistroEmpresaResponse>("/api/empresas", { method: "POST", body: json(datos) }),
 };
