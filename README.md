@@ -126,7 +126,7 @@ $env:SONAR_TOKEN="tu-token"; npm run sonar
 ```
 
 Por defecto usa el SonarQube local (`http://localhost:9000`); para otro servidor define también `SONAR_HOST_URL`.
-El resultado queda en `http://localhost:9000/dashboard?id=kairos-frontend`.
+El resultado queda en `http://localhost:9000/dashboard?id=KAIROS-FRONTEND`.
 
 En GitHub Actions el análisis corre solo si existen los secretos `SONAR_TOKEN` y `SONAR_HOST_URL` (*Settings → Secrets and variables → Actions*).
 

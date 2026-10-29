@@ -42,4 +42,4 @@ ejecutar("docker", [
   "sonarsource/sonar-scanner-cli:latest",
 ]);
 
-console.log(`\nListo: abre ${servidor.replace("host.docker.internal", "localhost")}/dashboard?id=kairos-frontend`);
+console.log(`\nListo: abre ${servidor.replace("host.docker.internal", "localhost")}/dashboard?id=KAIROS-FRONTEND`);
