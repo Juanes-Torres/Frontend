@@ -98,6 +98,29 @@ src/
 docker/         plantilla de nginx y script de arranque del contenedor
 ```
 
+## CI/CD (GitHub Actions)
+
+El flujo está en [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml).
+
+| Cuándo | Qué hace |
+|---|---|
+| PR hacia `develop`, `staging` o `main` | Lint y compilación con Node 24; construye la imagen y la prueba (health check, `config.js`, rutas, que falle sin `API_URL`) |
+| Merge a `develop`, `staging` o `main` | Lo mismo y además **publica la imagen** en `ghcr.io/juanes-torres/frontend` |
+
+Etiquetas de la imagen publicada:
+
+| Rama | Etiquetas |
+|---|---|
+| `develop` | `develop`, `sha-<commit>` |
+| `staging` | `staging`, `sha-<commit>` |
+| `main` | `main`, `latest`, `sha-<commit>` |
+
+Usar una imagen publicada (es la misma para todos los ambientes, cambia solo `API_URL`):
+
+```bash
+docker run -p 8081:80 -e API_URL=https://api.kairos.com ghcr.io/juanes-torres/frontend:staging
+```
+
 ## Ramas
 
 | Rama | Ambiente |
@@ -116,7 +139,7 @@ Las ramas nuevas salen de `develop` con el nombre `feature/SCRUM-<número>-<desc
 | II. Dependencias | `package-lock.json` + `npm ci`; Node fijado en `.nvmrc` y `engines` |
 | III. Configuración | `API_URL` y `PORT` como variables de entorno |
 | IV. Servicios de respaldo | El backend es una URL intercambiable |
-| V. Construir, publicar, ejecutar | Una imagen; la configuración se aplica al arrancar |
+| V. Construir, publicar, ejecutar | GitHub Actions construye y publica una sola imagen; la configuración se aplica al arrancar |
 | VI. Procesos | Sin estado en el servidor: la sesión vive en el navegador (JWT) |
 | VII. Puertos | nginx escucha en `PORT` |
 | IX. Desechabilidad | El contenedor arranca en segundos y se puede reemplazar |
