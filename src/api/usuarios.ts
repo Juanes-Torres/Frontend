@@ -1,12 +1,21 @@
 // Servicio de consumo de API: usuarios y autenticación
 import { apiFetch, json } from "./client";
-import type { LoginResponse, Usuario } from "../types";
+import type { LoginResponse, Rol, Usuario } from "../types";
 
 export interface RegistroRequest {
   nombre: string;
   email: string;
   password: string;
   telefono: string;
+}
+
+export interface EmpleadoRequest {
+  nombre: string;
+  email: string;
+  password: string;
+  rol: Exclude<Rol, "CLIENTE">;
+  telefono: string;
+  idAlmacen: number | null;
 }
 
 export const usuariosApi = {
@@ -20,4 +29,14 @@ export const usuariosApi = {
 
   actualizar: (id: number, nombre: string, telefono: string) =>
     apiFetch<Usuario>(`/api/usuarios/${id}`, { method: "PUT", body: json({ nombre, telefono }) }),
+
+  // Solo ADMINISTRADOR
+  listar: () => apiFetch<Usuario[]>("/api/usuarios"),
+
+  crearEmpleado: (datos: EmpleadoRequest) =>
+    apiFetch<Usuario>("/api/usuarios/empleados", { method: "POST", body: json(datos) }),
+
+  activar: (id: number) => apiFetch<Usuario>(`/api/usuarios/${id}/activar`, { method: "PATCH" }),
+
+  desactivar: (id: number) => apiFetch<Usuario>(`/api/usuarios/${id}/desactivar`, { method: "PATCH" }),
 };

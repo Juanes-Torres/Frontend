@@ -1,7 +1,8 @@
 // Cliente HTTP central: TODAS las llamadas al backend pasan por aquí.
 // Agrega el token JWT automáticamente y convierte los errores de la API en ApiError.
+import { config } from "../config";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const API_URL = config.apiUrl;
 
 export const TOKEN_KEY = "kairos_token";
 export const USUARIO_KEY = "kairos_usuario";

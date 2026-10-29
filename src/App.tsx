@@ -9,6 +9,7 @@ import RegistroPage from "./pages/RegistroPage";
 import PerfilPage from "./pages/PerfilPage";
 import AdminProductosPage from "./pages/AdminProductosPage";
 import InventarioPage from "./pages/InventarioPage";
+import AdminUsuariosPage from "./pages/AdminUsuariosPage";
 
 export default function App() {
   return (
@@ -29,6 +30,10 @@ export default function App() {
             <Route
               path="/admin/productos"
               element={<RutaProtegida roles={["ADMINISTRADOR"]}><AdminProductosPage /></RutaProtegida>}
+            />
+            <Route
+              path="/admin/usuarios"
+              element={<RutaProtegida roles={["ADMINISTRADOR"]}><AdminUsuariosPage /></RutaProtegida>}
             />
             <Route
               path="/inventario"

@@ -1,0 +1,36 @@
+# nginx para KAIRÓS: sirve la página de React
+# Es una PLANTILLA: al arrancar, la imagen de nginx reemplaza ${PORT} con la
+# variable de entorno y guarda el resultado en /etc/nginx/conf.d/default.conf
+# (12 factores: VII, el puerto llega desde afuera).
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # React Router maneja las rutas (/login, /productos...) en el navegador.
+    # Si el archivo no existe, se entrega index.html para que al recargar no salga 404.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Health check: Docker (y cualquier orquestador) pregunta aquí si el
+    # contenedor está listo. No se guarda en el log para no llenarlo de ruido.
+    location = /salud {
+        access_log off;
+        default_type application/json;
+        add_header Cache-Control "no-store";
+        return 200 '{"estado":"UP"}';
+    }
+
+    # config.js cambia en cada despliegue (lo genera el contenedor al arrancar):
+    # el navegador siempre debe pedir la versión actual
+    location = /config.js {
+        add_header Cache-Control "no-store";
+    }
+
+    # Los archivos de assets tienen un código en el nombre: se pueden guardar en caché mucho tiempo
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
