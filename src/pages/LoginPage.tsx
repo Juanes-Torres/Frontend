@@ -30,7 +30,7 @@ export default function LoginPage() {
     setCargando(true);
     try {
       const usuario = await login(email, password);   // 1. llama a POST /api/usuarios/login
-      navigate(inicioPorRol[usuario.rol]);           // 2. redirige según el rol
+      void navigate(inicioPorRol[usuario.rol]);      // 2. redirige según el rol
     } catch (err) {
       setError(err);                  // 3. muestra el error (ej. 401, o empresa pendiente de aprobación)
     } finally {

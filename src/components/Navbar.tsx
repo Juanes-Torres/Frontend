@@ -8,7 +8,7 @@ export default function Navbar() {
 
   const salir = () => {
     logout();
-    navigate("/login");
+    void navigate("/login");   // navigate puede devolver una promesa: no hace falta esperarla
   };
 
   const esAdmin = usuario?.rol === "ADMINISTRADOR";

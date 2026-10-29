@@ -21,7 +21,7 @@ export default function RegistroPage() {
     setCargando(true);
     try {
       const creado = await usuariosApi.registrar(datos);       // POST /api/usuarios → 201
-      navigate("/login", { state: { mensaje: `Cuenta creada para ${creado.email}. Ya puedes iniciar sesión.` } });
+      void navigate("/login", { state: { mensaje: `Cuenta creada para ${creado.email}. Ya puedes iniciar sesión.` } });
     } catch (err) {
       setError(err);                                           // 400 (campos) o 409 (email repetido)
     } finally {
