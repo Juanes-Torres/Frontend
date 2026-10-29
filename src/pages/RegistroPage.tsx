@@ -55,6 +55,7 @@ export default function RegistroPage() {
       </form>
 
       <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>
+      <p>¿Representas a una empresa? <Link to="/registro-empresa">Registra tu empresa</Link></p>
     </div>
   );
 }
