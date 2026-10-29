@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { empresasApi } from "../api/empresas";
 import type { AccionEmpresa } from "../api/empresas";
+import { InsigniaEmpresa } from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import type { Empresa, EstadoEmpresa } from "../types";
 
@@ -20,13 +21,6 @@ const resultado: Record<AccionEmpresa, string> = {
   rechazar: "rechazada",
   suspender: "suspendida",
   reactivar: "reactivada",
-};
-
-const nombreEstado: Record<EstadoEmpresa, string> = {
-  PENDIENTE: "Pendiente",
-  ACTIVA: "Activa",
-  RECHAZADA: "Rechazada",
-  SUSPENDIDA: "Suspendida",
 };
 
 export default function SuperadminEmpresasPage() {
@@ -88,11 +82,7 @@ export default function SuperadminEmpresasPage() {
               <td>{e.email}</td>
               <td>{e.telefono ?? "—"}</td>
               <td>{e.fechaRegistro}</td>
-              <td>
-                <span className={e.estado === "ACTIVA" ? "etiqueta" : "etiqueta etiqueta-alerta"}>
-                  {nombreEstado[e.estado]}
-                </span>
-              </td>
+              <td><InsigniaEmpresa estado={e.estado} /></td>
               <td className="acciones">
                 {accionesPorEstado[e.estado].map(({ accion, texto, clase }) => (
                   <button key={accion} className={clase} onClick={() => cambiarEstado(e, accion)}>{texto}</button>

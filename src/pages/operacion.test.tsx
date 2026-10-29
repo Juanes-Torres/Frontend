@@ -39,8 +39,8 @@ describe("AlmacenesPage", () => {
   it("lista las sedes con su estado", async () => {
     renderConApp(<AlmacenesPage />);
     expect(await screen.findByText("Sedes (2)")).toBeInTheDocument();
-    expect(within(await filaDe("Sede Norte")).getByText("Activa")).toBeInTheDocument();
-    expect(within(await filaDe("Sede Sur")).getByText("Inactiva")).toBeInTheDocument();
+    expect(within(await filaDe("Sede Norte")).getByText("Activo")).toBeInTheDocument();
+    expect(within(await filaDe("Sede Sur")).getByText("Inactivo")).toBeInTheDocument();
     expect(within(await filaDe("Sede Sur")).getByText("—")).toBeInTheDocument();
   });
 

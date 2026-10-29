@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { inventarioApi } from "../api/inventario";
 import type { AlmacenRequest } from "../api/inventario";
+import Insignia from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import type { Almacen } from "../types";
 
@@ -99,7 +100,7 @@ export default function AlmacenesPage() {
                   <td>{a.nombre}</td>
                   <td>{a.ciudad}</td>
                   <td>{a.direccion ?? "—"}</td>
-                  <td>{a.estado === "ACTIVO" ? "Activa" : <span className="etiqueta etiqueta-alerta">Inactiva</span>}</td>
+                  <td><Insignia tipo={a.estado === "ACTIVO" ? "Activo" : "Inactivo"} /></td>
                   <td className="acciones">
                     <button className="btn-secundario" onClick={() => editar(a)}>Editar</button>
                     <button className={a.estado === "ACTIVO" ? "btn-peligro" : "btn-secundario"} onClick={() => cambiarEstado(a)}>

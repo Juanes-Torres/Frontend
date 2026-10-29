@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { catalogoApi } from "../api/catalogo";
 import { inventarioApi } from "../api/inventario";
 import { useAuth } from "../context/AuthContext";
+import Insignia from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import type { Almacen, Inventario, Producto, TipoMovimiento } from "../types";
 
@@ -113,7 +114,7 @@ export default function InventarioPage() {
                 <td>{f.producto}</td>
                 <td>{f.almacen}</td>
                 <td>
-                  {f.cantidadDisponible} {f.bajoStock && <span className="etiqueta etiqueta-alerta">Bajo stock</span>}
+                  {f.cantidadDisponible} {f.bajoStock && <Insignia tipo="Bajo stock" />}
                 </td>
                 <td>
                   {f.stockMinimo}{" "}

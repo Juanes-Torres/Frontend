@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { catalogoApi } from "../api/catalogo";
 import { inventarioApi } from "../api/inventario";
 import { ventasApi } from "../api/ventas";
+import Insignia from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import { useAuth } from "../context/AuthContext";
 import { formatoPrecio } from "../utils/formato";
@@ -84,7 +85,8 @@ export default function VentasPage() {
   if (venta) {
     return (
       <div className="pagina pagina-estrecha">
-        <h2>Factura {venta.numeroFactura}</h2>
+        <h2>Venta registrada <Insignia tipo="Completada" /></h2>
+        <p className="texto-ayuda">Factura {venta.numeroFactura}</p>
         <Mensaje tipo="exito" texto="Venta registrada. El stock ya se descontó." />
         <table>
           <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>

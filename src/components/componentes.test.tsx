@@ -103,13 +103,13 @@ describe("Navbar", () => {
   it("un administrador ve todas las opciones, su nombre, su rol y su empresa", () => {
     iniciarSesionComo("ADMINISTRADOR", { nombre: "carlos" });
     renderConApp(<Navbar />);
-    expect(screen.getByText("Tecno SAS")).toBeInTheDocument();
+    expect(screen.getByText("ADMINISTRADOR · TECNO SAS")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Empresas" })).not.toBeInTheDocument();
     for (const nombre of ["Productos", "Sedes", "Usuarios", "Inventario", "Ventas"]) {
       expect(screen.getByRole("link", { name: nombre })).toBeInTheDocument();
     }
     expect(screen.getByText("C")).toBeInTheDocument();          // inicial en el avatar
-    expect(screen.getByText("ADMINISTRADOR")).toBeInTheDocument();
+
   });
 
   it("Salir cierra la sesión y lleva al login", async () => {
