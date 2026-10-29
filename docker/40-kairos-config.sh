@@ -9,6 +9,7 @@
 #
 # Variables:
 #   API_URL   (obligatoria) dirección del backend que usará el navegador
+#   PORT      (opcional, 80 por defecto) puerto donde escucha nginx
 # =========================================================
 set -eu
 
@@ -26,9 +27,21 @@ if ! printf '%s' "$API_URL" | grep -Eq '^https?://[^"\\<> ]+$'; then
   exit 1
 fi
 
+# El puerto ya se puso en la configuración de nginx (plantilla); aquí solo se
+# revisa que sea un número válido para que el error sea claro
+case "${PORT:-}" in
+  ''|*[!0-9]*)
+    echo "kairos-config: ERROR PORT debe ser un número (ej. -e PORT=8080): ${PORT:-}" >&2
+    exit 1 ;;
+esac
+if [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+  echo "kairos-config: ERROR PORT fuera de rango (1-65535): $PORT" >&2
+  exit 1
+fi
+
 cat > "$HTML_DIR/config.js" <<EOF
 // Generado al arrancar el contenedor. No editar a mano.
 window.__KAIROS_CONFIG__ = { apiUrl: "$API_URL" };
 EOF
 
-echo "kairos-config: API_URL=$API_URL"
+echo "kairos-config: API_URL=$API_URL PORT=$PORT"
