@@ -10,6 +10,7 @@
 #   develop -> ghcr.io/juanes-torres/frontend:develop
 #   staging -> ghcr.io/juanes-torres/frontend:staging
 #   main    -> ghcr.io/juanes-torres/frontend:main y :latest
+#   v1.2.3  -> ghcr.io/juanes-torres/frontend:1.2.3 y :1.2   (tag de versión)
 # Todas llevan también la etiqueta sha-<commit> para saber qué versión corre.
 # La imagen es la MISMA para todos los ambientes: la dirección del backend se
 # pasa al arrancar con API_URL.
@@ -21,6 +22,7 @@ on:
     branches: [develop, staging, main]
   push:
     branches: [develop, staging, main]
+    tags: ["v*.*.*"]          # versiones: git tag v1.0.0 && git push origin v1.0.0
   workflow_dispatch:
 
 # Si llega un commit nuevo a la misma rama, se cancela la ejecución anterior
@@ -148,6 +150,8 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 

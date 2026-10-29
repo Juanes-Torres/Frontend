@@ -152,20 +152,44 @@ El flujo está en [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml).
 |---|---|
 | PR hacia `develop`, `staging` o `main` | Lint y compilación con Node 24; construye la imagen y la prueba (health check, `config.js`, rutas, que falle sin `API_URL`) |
 | Merge a `develop`, `staging` o `main` | Lo mismo y además **publica la imagen** en `ghcr.io/juanes-torres/frontend` |
+| Tag de versión (`v1.0.0`) | Publica la imagen con el número de versión |
 
 Etiquetas de la imagen publicada:
 
-| Rama | Etiquetas |
+| Origen | Etiquetas |
 |---|---|
 | `develop` | `develop`, `sha-<commit>` |
 | `staging` | `staging`, `sha-<commit>` |
 | `main` | `main`, `latest`, `sha-<commit>` |
+| tag `v1.2.3` | `1.2.3`, `1.2`, `sha-<commit>` |
 
-Usar una imagen publicada (es la misma para todos los ambientes, cambia solo `API_URL`):
+Para publicar una versión:
 
 ```bash
-docker run -p 8081:80 -e API_URL=https://api.kairos.com ghcr.io/juanes-torres/frontend:staging
+git tag v1.0.0
+git push origin v1.0.0
 ```
+
+## Usar la imagen publicada
+
+La imagen está en **GitHub Container Registry** y es la misma para todos los ambientes: solo cambia `API_URL`.
+No necesitas clonar el repositorio ni tener Node.
+
+```bash
+docker pull ghcr.io/juanes-torres/frontend:latest
+docker run -d --name kairos-frontend -p 5173:80 \
+  -e API_URL=http://localhost:8080 \
+  ghcr.io/juanes-torres/frontend:latest
+```
+
+Abre http://localhost:5173. El backend debe estar en `API_URL` y aceptar ese origen en CORS (`CORS_ORIGINS`).
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `API_URL` | Sí | Dirección del backend que usa el navegador |
+| `PORT` | No (80) | Puerto donde escucha nginx dentro del contenedor |
+
+`docker ps` muestra el contenedor como `healthy` cuando responde en `/salud`.
 
 ## Ramas
 
