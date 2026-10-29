@@ -1,0 +1,174 @@
+# =========================================================
+# KAIRÓS frontend - integración y entrega continua (12 factores: V)
+#
+# En cada PR hacia develop, staging o main:
+#   1. verificar: lint, pruebas con cobertura (mínimo 80%), SonarQube y compilación
+#   2. imagen:    construye la imagen de Docker y la prueba arrancándola
+#
+# Al mergear (push) a develop, staging o main, además PUBLICA la imagen en
+# GitHub Container Registry, con una etiqueta por ambiente:
+#   develop -> ghcr.io/juanes-torres/frontend:develop
+#   staging -> ghcr.io/juanes-torres/frontend:staging
+#   main    -> ghcr.io/juanes-torres/frontend:main y :latest
+#   v1.2.3  -> ghcr.io/juanes-torres/frontend:1.2.3 y :1.2   (tag de versión)
+# Todas llevan también la etiqueta sha-<commit> para saber qué versión corre.
+# La imagen es la MISMA para todos los ambientes: la dirección del backend se
+# pasa al arrancar con API_URL.
+# =========================================================
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [develop, staging, main]
+  push:
+    branches: [develop, staging, main]
+    tags: ["v*.*.*"]          # versiones: git tag v1.0.0 && git push origin v1.0.0
+  workflow_dispatch:
+
+# Si llega un commit nuevo a la misma rama, se cancela la ejecución anterior
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: Lint, pruebas y compilación
+    runs-on: ubuntu-latest
+    env:
+      # Si estos secretos no están configurados en GitHub, el análisis de SonarQube se salta
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # SonarQube usa el historial para saber qué código es nuevo
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias (exactas de package-lock.json)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Falla si la cobertura baja de 80% (thresholds en vite.config.ts)
+      - name: Pruebas y cobertura
+        run: npm run test:coverage
+
+      - name: Guardar el reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage/
+          retention-days: 7
+
+      - name: Análisis de SonarQube
+        if: env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+
+      - name: Compilar
+        run: npm run build
+
+  imagen:
+    name: Imagen de Docker
+    needs: verificar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # para publicar en ghcr.io
+    env:
+      IMAGEN_LOCAL: kairos-frontend:ci
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construir la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ env.IMAGEN_LOCAL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Probar la imagen
+        run: |
+          set -eu
+          docker run -d --name prueba -p 8081:9000 \
+            -e PORT=9000 -e API_URL=https://api.ejemplo.com "$IMAGEN_LOCAL"
+
+          # Espera a que el health check de Docker lo marque como healthy
+          for _ in $(seq 1 30); do
+            estado=$(docker inspect -f '{{.State.Health.Status}}' prueba)
+            [ "$estado" = healthy ] && break
+            sleep 1
+          done
+          echo "Estado: $estado"
+          [ "$estado" = healthy ]
+
+          # Se guarda la respuesta antes de buscar: con pipefail, "curl | grep -q"
+          # puede fallar aunque el texto sí esté
+          salud=$(curl -fsS http://localhost:8081/salud)
+          echo "$salud" | grep -q '"estado":"UP"'
+          config=$(curl -fsS http://localhost:8081/config.js)
+          echo "$config" | grep -q 'https://api.ejemplo.com'
+          # Las rutas de React Router deben devolver la página, no 404
+          curl -fsS -o /dev/null http://localhost:8081/productos
+
+          # Los logs de acceso deben ser JSON válido (12 factores: XI)
+          sleep 1
+          ultimo_log=$(docker logs prueba 2>/dev/null | grep '^{' | tail -n 1)
+          echo "$ultimo_log" | python3 -c 'import json,sys; l=json.load(sys.stdin); assert l["ruta"] == "/productos" and l["estado"] == 200, l'
+
+          # Sin API_URL el contenedor debe negarse a arrancar (código 1).
+          # El timeout evita que el paso se quede colgado si nginx sí arrancara.
+          set +e
+          timeout 30 docker run --rm "$IMAGEN_LOCAL"
+          codigo=$?
+          set -e
+          [ "$codigo" = 1 ] || { echo "ERROR: sin API_URL terminó con código $codigo"; exit 1; }
+          echo "Imagen OK"
+
+      - name: Mostrar logs si algo falló
+        if: failure()
+        run: docker logs prueba || true
+
+      # ----- Solo al mergear a develop, staging o main -----
+      - name: Etiquetas de la imagen
+        if: github.event_name == 'push'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Iniciar sesión en ghcr.io
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar la imagen
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

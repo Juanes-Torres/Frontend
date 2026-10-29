@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { inventarioApi } from "../api/inventario";
 import { usuariosApi } from "../api/usuarios";
+import { InsigniaRol } from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import { useAuth } from "../context/AuthContext";
 import type { Almacen, Usuario } from "../types";
@@ -117,9 +118,9 @@ export default function AdminUsuariosPage() {
                   <td>{u.id}</td>
                   <td>{u.nombre}</td>
                   <td>{u.email}</td>
-                  <td><span className="etiqueta">{u.rol}</span></td>
+                  <td><InsigniaRol rol={u.rol} /></td>
                   <td>{almacenes.find((a) => a.id === u.idAlmacen)?.nombre ?? "—"}</td>
-                  <td>{u.activo ? "Activo" : <span className="etiqueta etiqueta-alerta">Inactivo</span>}</td>
+                  <td>{u.activo ? "Activo" : "Inactivo"}</td>
                   <td className="acciones">
                     {/* El administrador no puede desactivarse a sí mismo */}
                     {u.id !== actual?.id && (
@@ -132,6 +133,7 @@ export default function AdminUsuariosPage() {
               ))}
             </tbody>
           </table>
+          <p className="texto-ayuda">Desactivar no borra los datos: la persona solo deja de poder iniciar sesión.</p>
         </section>
       </div>
     </div>

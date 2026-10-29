@@ -1,33 +1,40 @@
 import { useEffect, useState } from "react";
 import { catalogoApi } from "../api/catalogo";
+import { empresasApi } from "../api/empresas";
 import Mensaje from "../components/Mensaje";
 import { formatoPrecio } from "../utils/formato";
-import type { Categoria, Producto } from "../types";
+import type { Categoria, EmpresaPublica, Producto } from "../types";
 
 export default function CatalogoPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [empresas, setEmpresas] = useState<EmpresaPublica[]>([]);
   const [idCategoria, setIdCategoria] = useState<number | undefined>(undefined);
+  const [idEmpresa, setIdEmpresa] = useState<number | undefined>(undefined);
   const [busqueda, setBusqueda] = useState("");
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     catalogoApi.listarCategorias().then(setCategorias).catch(setError);
+    empresasApi.listarActivas().then(setEmpresas).catch(setError);   // el cliente elige dónde comprar
   }, []);
 
   useEffect(() => {
     const espera = setTimeout(() => {
       catalogoApi
-        .buscarProductos(idCategoria, busqueda.trim())
+        .buscarProductos(idCategoria, busqueda.trim(), idEmpresa)
         .then(setProductos)
         .catch(setError);
     }, 300);
 
     return () => clearTimeout(espera);
-  }, [idCategoria, busqueda]);
+  }, [idCategoria, busqueda, idEmpresa]);
 
   const nombreCategoria = (id: number) =>
     categorias.find((c) => c.id === id)?.nombre ?? "";
+
+  const nombreEmpresa = (id: number) =>
+    empresas.find((e) => e.id === id)?.nombre;
 
   return (
     <div className="catalogo">
@@ -65,6 +72,23 @@ export default function CatalogoPage() {
         </div>
 
         <select
+          aria-label="Empresa"
+          value={idEmpresa ?? ""}
+          onChange={(e) =>
+            setIdEmpresa(e.target.value ? Number(e.target.value) : undefined)
+          }
+        >
+          <option value="">Todas las empresas</option>
+
+          {empresas.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.nombre}
+            </option>
+          ))}
+        </select>
+
+        <select
+          aria-label="Categoría"
           value={idCategoria ?? ""}
           onChange={(e) =>
             setIdCategoria(
@@ -136,6 +160,12 @@ export default function CatalogoPage() {
                 <p className="producto-descripcion">
                   {p.descripcion}
                 </p>
+
+                {nombreEmpresa(p.idEmpresa) && (
+                  <p className="texto-ayuda">
+                    Vendido por {nombreEmpresa(p.idEmpresa)}
+                  </p>
+                )}
 
                 <div className="producto-footer">
                   <span className="producto-precio">

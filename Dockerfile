@@ -24,6 +24,12 @@ RUN npm run build
 # ---------- Etapa 2: servir con nginx ----------
 FROM nginx:1.29-alpine
 
+# Datos de la imagen (estándar OCI). "source" hace que GitHub enlace el paquete
+# de ghcr.io con el repositorio y le aplique su misma visibilidad.
+LABEL org.opencontainers.image.title="KAIRÓS Frontend" \
+      org.opencontainers.image.description="Página web de KAIRÓS (React) servida con nginx. Configurar con API_URL y PORT." \
+      org.opencontainers.image.source="https://github.com/Juanes-Torres/Frontend"
+
 # Puerto donde escucha nginx (12 factores: VII). Se cambia con -e PORT=8080.
 # La imagen de nginx convierte las plantillas de /etc/nginx/templates en la
 # configuración final al arrancar, reemplazando ${PORT}.

@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { catalogoApi } from "../api/catalogo";
 import { inventarioApi } from "../api/inventario";
 import { useAuth } from "../context/AuthContext";
+import Insignia from "../components/Insignia";
 import Mensaje from "../components/Mensaje";
 import type { Almacen, Inventario, Producto, TipoMovimiento } from "../types";
 
@@ -22,8 +23,9 @@ export default function InventarioPage() {
 
   useEffect(() => {
     inventarioApi.listarAlmacenes().then(setAlmacenes).catch(setError);
-    if (esAdmin) catalogoApi.buscarProductos().then(setProductos).catch(setError);
-  }, [esAdmin]);
+    // Solo se pueden registrar productos de la propia empresa
+    if (esAdmin) catalogoApi.buscarProductos(undefined, undefined, usuario?.idEmpresa ?? undefined).then(setProductos).catch(setError);
+  }, [esAdmin, usuario?.idEmpresa]);
 
   const cargar = useCallback(() => {
     const peticion = soloBajoStock ? inventarioApi.bajoStock() : inventarioApi.listar(idAlmacen);
@@ -43,6 +45,20 @@ export default function InventarioPage() {
       cargar();
     } catch (err) {
       setError(err);   // ej. 400 "Stock insuficiente"
+    }
+  };
+
+  const cambiarMinimo = async (fila: Inventario) => {
+    const respuesta = window.prompt(`Stock mínimo para ${fila.producto} en ${fila.almacen}`, String(fila.stockMinimo));
+    if (respuesta === null || respuesta.trim() === "") return;
+    setError(null);
+    setExito("");
+    try {
+      const r = await inventarioApi.cambiarStockMinimo(fila.id, Number(respuesta));   // PATCH
+      setExito(`Stock mínimo de ${r.producto} en ${r.almacen}: ${r.stockMinimo}`);
+      cargar();
+    } catch (err) {
+      setError(err);   // ej. 400 si es negativo
     }
   };
 
@@ -98,9 +114,12 @@ export default function InventarioPage() {
                 <td>{f.producto}</td>
                 <td>{f.almacen}</td>
                 <td>
-                  {f.cantidadDisponible} {f.bajoStock && <span className="etiqueta etiqueta-alerta">Bajo stock</span>}
+                  {f.cantidadDisponible} {f.bajoStock && <Insignia tipo="Bajo stock" />}
                 </td>
-                <td>{f.stockMinimo}</td>
+                <td>
+                  {f.stockMinimo}{" "}
+                  {esAdmin && <button className="btn-link" onClick={() => cambiarMinimo(f)}>Cambiar</button>}
+                </td>
                 <td className="acciones">
                   <select
                     value={ajuste.tipo}
