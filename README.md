@@ -98,7 +98,33 @@ Las consultas a `/salud` no se registran, para no llenar el log. Los errores de 
 | `npm run dev` | Servidor de desarrollo con recarga automática |
 | `npm run build` | Revisa los tipos y arma la página en `dist/` |
 | `npm run lint` | Revisa el estilo del código con ESLint |
+| `npm test` | Corre todas las pruebas una vez |
+| `npm run test:watch` | Corre las pruebas cada vez que guardas un archivo |
+| `npm run test:coverage` | Pruebas + reporte de cobertura en `coverage/` |
 | `npm run preview` | Sirve `dist/` para probar la compilación |
+
+## Pruebas y cobertura
+
+Las pruebas usan **Vitest** + **Testing Library** y están junto al código (`*.test.ts` / `*.test.tsx`).
+No llaman al backend real: las respuestas de la API se simulan para probar cada caso (éxito, 400, 401, 409, sin conexión...).
+
+```bash
+npm run test:coverage
+```
+
+- La cobertura mínima es **80%** (líneas, sentencias, funciones y ramas). Si baja, el comando falla, y también el CI.
+- El reporte para **SonarQube** queda en `coverage/lcov.info`; el HTML para verlo en el navegador, en `coverage/index.html`.
+- No cuentan para la cobertura `main.tsx` (solo arranca React) ni los archivos que solo tienen tipos.
+
+### SonarQube
+
+La configuración está en [sonar-project.properties](sonar-project.properties). Con el reporte ya generado:
+
+```bash
+npx sonar-scanner -Dsonar.host.url=<url-de-sonarqube> -Dsonar.token=<token>
+```
+
+En GitHub Actions el análisis corre solo si existen los secretos `SONAR_TOKEN` y `SONAR_HOST_URL` (*Settings → Secrets and variables → Actions*).
 
 ## Estructura
 
@@ -109,6 +135,7 @@ src/
   components/   piezas reutilizables (Navbar, Mensaje, rutas protegidas)
   pages/        una pantalla por archivo
   utils/        funciones de apoyo
+  test/         configuración y ayudas de las pruebas
   config.ts     de dónde sale la dirección del backend
 docker/         plantilla de nginx y script de arranque del contenedor
 ```

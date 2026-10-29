@@ -2,7 +2,7 @@
 # KAIRÓS frontend - integración y entrega continua (12 factores: V)
 #
 # En cada PR hacia develop, staging o main:
-#   1. verificar: lint + compilación con la misma versión de Node (.nvmrc)
+#   1. verificar: lint, pruebas con cobertura (mínimo 80%), SonarQube y compilación
 #   2. imagen:    construye la imagen de Docker y la prueba arrancándola
 #
 # Al mergear (push) a develop, staging o main, además PUBLICA la imagen en
@@ -33,10 +33,16 @@ permissions:
 
 jobs:
   verificar:
-    name: Lint y compilación
+    name: Lint, pruebas y compilación
     runs-on: ubuntu-latest
+    env:
+      # Si estos secretos no están configurados en GitHub, el análisis de SonarQube se salta
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # SonarQube usa el historial para saber qué código es nuevo
 
       - uses: actions/setup-node@v5
         with:
@@ -48,6 +54,22 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # Falla si la cobertura baja de 80% (thresholds en vite.config.ts)
+      - name: Pruebas y cobertura
+        run: npm run test:coverage
+
+      - name: Guardar el reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage/
+          retention-days: 7
+
+      - name: Análisis de SonarQube
+        if: env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != ''
+        uses: SonarSource/sonarqube-scan-action@v5
 
       - name: Compilar
         run: npm run build
