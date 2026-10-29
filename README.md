@@ -101,6 +101,7 @@ Las consultas a `/salud` no se registran, para no llenar el log. Los errores de 
 | `npm test` | Corre todas las pruebas una vez |
 | `npm run test:watch` | Corre las pruebas cada vez que guardas un archivo |
 | `npm run test:coverage` | Pruebas + reporte de cobertura en `coverage/` |
+| `npm run sonar` | Pruebas + cobertura + análisis en SonarQube (necesita `SONAR_TOKEN`) |
 | `npm run preview` | Sirve `dist/` para probar la compilación |
 
 ## Pruebas y cobertura
@@ -118,11 +119,14 @@ npm run test:coverage
 
 ### SonarQube
 
-La configuración está en [sonar-project.properties](sonar-project.properties). Con el reporte ya generado:
+La configuración está en [sonar-project.properties](sonar-project.properties). Un solo comando corre las pruebas y envía el análisis (usa el scanner oficial en Docker):
 
-```bash
-npx sonar-scanner -Dsonar.host.url=<url-de-sonarqube> -Dsonar.token=<token>
+```powershell
+$env:SONAR_TOKEN="tu-token"; npm run sonar
 ```
+
+Por defecto usa el SonarQube local (`http://localhost:9000`); para otro servidor define también `SONAR_HOST_URL`.
+El resultado queda en `http://localhost:9000/dashboard?id=kairos-frontend`.
 
 En GitHub Actions el análisis corre solo si existen los secretos `SONAR_TOKEN` y `SONAR_HOST_URL` (*Settings → Secrets and variables → Actions*).
 

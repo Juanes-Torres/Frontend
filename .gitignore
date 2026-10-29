@@ -26,3 +26,6 @@ dist-ssr
 
 # Reporte de cobertura (npm run test:coverage)
 coverage
+
+# Archivos temporales de sonar-scanner
+.scannerwork
