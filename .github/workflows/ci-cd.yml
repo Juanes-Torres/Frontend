@@ -99,6 +99,11 @@ jobs:
           # Las rutas de React Router deben devolver la página, no 404
           curl -fsS -o /dev/null http://localhost:8081/productos
 
+          # Los logs de acceso deben ser JSON válido (12 factores: XI)
+          sleep 1
+          ultimo_log=$(docker logs prueba 2>/dev/null | grep '^{' | tail -n 1)
+          echo "$ultimo_log" | python3 -c 'import json,sys; l=json.load(sys.stdin); assert l["ruta"] == "/productos" and l["estado"] == 200, l'
+
           # Sin API_URL el contenedor debe negarse a arrancar (código 1).
           # El timeout evita que el paso se quede colgado si nginx sí arrancara.
           set +e

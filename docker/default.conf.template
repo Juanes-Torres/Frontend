@@ -2,8 +2,30 @@
 # Es una PLANTILLA: al arrancar, la imagen de nginx reemplaza ${PORT} con la
 # variable de entorno y guarda el resultado en /etc/nginx/conf.d/default.conf
 # (12 factores: VII, el puerto llega desde afuera).
+
+# Logs (12 factores: XI): una línea JSON por petición, escrita en la salida
+# estándar del contenedor. Docker o cualquier herramienta de monitoreo la
+# recoge y la puede filtrar por campo (estado, ruta, duración...).
+# escape=json protege las comillas y caracteres raros que manda el cliente.
+log_format kairos_json escape=json
+    '{'
+        '"tiempo":"$time_iso8601",'
+        '"servicio":"kairos-frontend",'
+        '"id_peticion":"$request_id",'
+        '"ip":"$remote_addr",'
+        '"metodo":"$request_method",'
+        '"ruta":"$request_uri",'
+        '"protocolo":"$server_protocol",'
+        '"estado":$status,'
+        '"bytes":$body_bytes_sent,'
+        '"duracion_s":$request_time,'
+        '"referer":"$http_referer",'
+        '"agente":"$http_user_agent"'
+    '}';
+
 server {
     listen ${PORT};
+    access_log /var/log/nginx/access.log kairos_json;
     root /usr/share/nginx/html;
     index index.html;
 

@@ -76,6 +76,21 @@ Si falta `API_URL` o `PORT` no es válido, el contenedor se detiene con un mensa
 
 **Health check:** `GET /salud` responde `{"estado":"UP"}`. Docker lo consulta cada 10 segundos.
 
+## Logs
+
+El contenedor escribe **una línea JSON por petición** en la salida estándar (no en archivos):
+
+```json
+{"tiempo":"2026-10-29T01:31:58+00:00","servicio":"kairos-frontend","id_peticion":"fa5187...","ip":"172.17.0.1","metodo":"GET","ruta":"/productos","protocolo":"HTTP/1.1","estado":200,"bytes":596,"duracion_s":0.000,"referer":"","agente":"Mozilla/5.0 ..."}
+```
+
+```bash
+docker logs -f kairos-frontend                               # ver en vivo
+docker logs kairos-frontend | grep '"estado":404'            # solo las rutas no encontradas
+```
+
+Las consultas a `/salud` no se registran, para no llenar el log. Los errores de nginx van a la salida de errores en texto normal.
+
 ## Comandos
 
 | Comando | Qué hace |
@@ -144,3 +159,4 @@ Las ramas nuevas salen de `develop` con el nombre `feature/SCRUM-<número>-<desc
 | VII. Puertos | nginx escucha en `PORT` |
 | IX. Desechabilidad | El contenedor arranca en segundos y se puede reemplazar |
 | X. Paridad dev/prod | Misma versión de Node, mismo puerto 5173 y el mismo stack con Docker Compose |
+| XI. Logs | Una línea JSON por petición en la salida estándar; Docker la recoge |
