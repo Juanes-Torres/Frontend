@@ -1,75 +1,123 @@
-# React + TypeScript + Vite
+# KAIRÓS · Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Página web de KAIRÓS: catálogo de productos, inventario por almacén, administración de usuarios y registro de empresas.
+Está hecha con **React 19 + TypeScript + Vite** y consume la API REST del backend ([Juanes-Torres/Backen](https://github.com/Juanes-Torres/Backen)).
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Herramienta | Versión | Para qué |
+|---|---|---|
+| Node.js | **24** (ver `.nvmrc`) | Desarrollo local |
+| npm | 11 o superior | Viene con Node 24 |
+| Docker Desktop | Reciente | Correr todo en contenedores |
 
-## React Compiler
+La versión de Node es la misma en tu equipo y en la imagen de Docker (`node:24-alpine`).
+Si usas otra, `npm install` falla a propósito (`engine-strict` en `.npmrc`). Con nvm: `nvm use`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Formas de correr el proyecto
 
-## Expanding the ESLint configuration
+### 1. Todo en contenedores (recomendado)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+El `docker-compose.yml` está en el repositorio del **backend** y levanta PostgreSQL, el backend y este frontend.
+Clona los dos repositorios uno al lado del otro:
 
 ```
+kairos-backend/    ← docker-compose.yml y .env
+kairos-frontend/   ← este repositorio
+```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+En `kairos-backend`, copia `.env.example` como `.env`, llena las claves y pon `FRONTEND_PATH=../kairos-frontend`. Luego:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+docker compose up --build -d     # levanta todo
+docker compose ps                # el frontend debe verse "healthy"
+docker compose down              # detiene (los datos se conservan)
+docker compose down -v           # detiene y BORRA los datos de la base
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Servicio | Dirección |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:8080 (Swagger en `/swagger-ui.html`) |
+| PostgreSQL | `localhost:5433` |
+
+### 2. Frontend en modo desarrollo (recarga al guardar)
+
+Útil para trabajar en las pantallas. Necesita el backend corriendo en `http://localhost:8080`.
+
+```bash
+cp .env.example .env   # solo la primera vez
+npm ci                 # instala exactamente lo que dice package-lock.json
+npm run dev            # http://localhost:5173
+```
+
+El puerto es siempre **5173**, porque es el origen que el backend acepta en CORS.
+Si el contenedor del frontend está corriendo, ocupa ese puerto: detenlo con `docker compose stop frontend` antes de `npm run dev`.
+
+### 3. Solo la imagen del frontend
+
+```bash
+docker build -t kairos-frontend .
+docker run -p 8081:80 -e API_URL=http://localhost:8080 kairos-frontend
+```
+
+## Configuración
+
+La dirección del backend **no** se mete en el código ni en la imagen: llega desde afuera, así la misma imagen sirve para desarrollo, pre-producción y producción.
+
+| Variable | Dónde | Obligatoria | Descripción |
+|---|---|---|---|
+| `VITE_API_URL` | `.env` (solo `npm run dev`) | No (por defecto `http://localhost:8080`) | Dirección del backend en desarrollo |
+| `API_URL` | Contenedor (`-e`) | **Sí** | Dirección del backend que usa el navegador |
+| `PORT` | Contenedor (`-e`) | No (por defecto `80`) | Puerto donde escucha nginx dentro del contenedor |
+
+Al arrancar, el contenedor escribe `config.js` con `API_URL`, y la página lo lee antes de iniciar ([src/config.ts](src/config.ts)).
+Si falta `API_URL` o `PORT` no es válido, el contenedor se detiene con un mensaje claro.
+
+**Health check:** `GET /salud` responde `{"estado":"UP"}`. Docker lo consulta cada 10 segundos.
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo con recarga automática |
+| `npm run build` | Revisa los tipos y arma la página en `dist/` |
+| `npm run lint` | Revisa el estilo del código con ESLint |
+| `npm run preview` | Sirve `dist/` para probar la compilación |
+
+## Estructura
 
 ```
+src/
+  api/          cliente HTTP (client.ts) y un archivo por recurso del backend
+  context/      sesión del usuario (AuthContext)
+  components/   piezas reutilizables (Navbar, Mensaje, rutas protegidas)
+  pages/        una pantalla por archivo
+  utils/        funciones de apoyo
+  config.ts     de dónde sale la dirección del backend
+docker/         plantilla de nginx y script de arranque del contenedor
+```
+
+## Ramas
+
+| Rama | Ambiente |
+|---|---|
+| `main` | Producción |
+| `staging` | Pre-producción |
+| `develop` | Desarrollo: aquí llegan los PR de `feature/*` |
+
+Las ramas nuevas salen de `develop` con el nombre `feature/SCRUM-<número>-<descripción>`.
+
+## 12 factores
+
+| Factor | Cómo se cumple |
+|---|---|
+| I. Código base | Un repositorio, varios despliegues (ramas por ambiente) |
+| II. Dependencias | `package-lock.json` + `npm ci`; Node fijado en `.nvmrc` y `engines` |
+| III. Configuración | `API_URL` y `PORT` como variables de entorno |
+| IV. Servicios de respaldo | El backend es una URL intercambiable |
+| V. Construir, publicar, ejecutar | Una imagen; la configuración se aplica al arrancar |
+| VI. Procesos | Sin estado en el servidor: la sesión vive en el navegador (JWT) |
+| VII. Puertos | nginx escucha en `PORT` |
+| IX. Desechabilidad | El contenedor arranca en segundos y se puede reemplazar |
+| X. Paridad dev/prod | Misma versión de Node, mismo puerto 5173 y el mismo stack con Docker Compose |

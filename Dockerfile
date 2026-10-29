@@ -6,12 +6,13 @@
 # =========================================================
 
 # ---------- Etapa 1: armar la página ----------
+# Misma versión mayor de Node que .nvmrc y "engines" en package.json (paridad dev/prod)
 FROM node:24-alpine AS compilacion
 WORKDIR /build
 
 # Primero solo package.json y package-lock.json: así Docker reutiliza
 # node_modules si solo cambió el código (las siguientes compilaciones son más rápidas)
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 COPY . .
