@@ -10,6 +10,7 @@ import PerfilPage from "./pages/PerfilPage";
 import AdminProductosPage from "./pages/AdminProductosPage";
 import InventarioPage from "./pages/InventarioPage";
 import AdminUsuariosPage from "./pages/AdminUsuariosPage";
+import RegistroEmpresaPage from "./pages/RegistroEmpresaPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/" element={<CatalogoPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
+            <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
 
             {/* Requieren sesión */}
             <Route path="/perfil" element={<RutaProtegida><PerfilPage /></RutaProtegida>} />

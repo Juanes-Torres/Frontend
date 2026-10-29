@@ -61,3 +61,15 @@ export interface Inventario {
 }
 
 export type TipoMovimiento = "ENTRADA" | "SALIDA";
+
+export type EstadoEmpresa = "PENDIENTE" | "ACTIVA" | "RECHAZADA" | "SUSPENDIDA";
+
+export interface Empresa {
+  id: number;
+  nombre: string;
+  nit: string;
+  email: string;
+  telefono: string | null;
+  estado: EstadoEmpresa;
+  fechaRegistro: string;
+}
