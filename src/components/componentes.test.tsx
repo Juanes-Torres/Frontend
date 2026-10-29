@@ -92,10 +92,20 @@ describe("Navbar", () => {
     expect(screen.queryByRole("link", { name: "Usuarios" })).not.toBeInTheDocument();
   });
 
-  it("un administrador ve todas las opciones, su nombre y su rol", () => {
+  it("un superadmin solo ve la administración de empresas", () => {
+    iniciarSesionComo("SUPERADMIN");
+    renderConApp(<Navbar />);
+    expect(screen.getByRole("link", { name: "Empresas" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Productos" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ventas" })).not.toBeInTheDocument();
+  });
+
+  it("un administrador ve todas las opciones, su nombre, su rol y su empresa", () => {
     iniciarSesionComo("ADMINISTRADOR", { nombre: "carlos" });
     renderConApp(<Navbar />);
-    for (const nombre of ["Productos", "Usuarios", "Inventario"]) {
+    expect(screen.getByText("Tecno SAS")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Empresas" })).not.toBeInTheDocument();
+    for (const nombre of ["Productos", "Sedes", "Usuarios", "Inventario", "Ventas"]) {
       expect(screen.getByRole("link", { name: nombre })).toBeInTheDocument();
     }
     expect(screen.getByText("C")).toBeInTheDocument();          // inicial en el avatar

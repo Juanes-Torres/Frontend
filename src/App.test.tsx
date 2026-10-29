@@ -7,6 +7,9 @@ import { iniciarSesionComo } from "./test/utils";
 vi.mock("./api/catalogo", () => ({
   catalogoApi: { listarCategorias: vi.fn().mockResolvedValue([]), buscarProductos: vi.fn().mockResolvedValue([]) },
 }));
+vi.mock("./api/empresas", () => ({
+  empresasApi: { listarActivas: vi.fn().mockResolvedValue([]), listar: vi.fn().mockResolvedValue([]) },
+}));
 vi.mock("./api/inventario", () => ({
   inventarioApi: { listarAlmacenes: vi.fn().mockResolvedValue([]), listar: vi.fn().mockResolvedValue([]) },
 }));
@@ -26,6 +29,7 @@ describe("App (rutas)", () => {
     ["/", "Productos"],
     ["/login", "Iniciar sesión"],
     ["/registro", "Crear cuenta de cliente"],
+    ["/registro-empresa", "Registrar mi empresa"],
   ])("la ruta pública %s muestra su página", async (ruta, titulo) => {
     abrir(ruta);
     expect(await screen.findByRole("heading", { name: titulo })).toBeInTheDocument();
@@ -47,10 +51,19 @@ describe("App (rutas)", () => {
     ["/admin/productos", "ADMINISTRADOR", "Administrar productos"],
     ["/admin/usuarios", "ADMINISTRADOR", "Administrar usuarios"],
     ["/inventario", "VENDEDOR", "Inventario por almacén"],
+    ["/admin/almacenes", "ADMINISTRADOR", "Sedes (almacenes)"],
+    ["/ventas", "VENDEDOR", "Agregue al menos un producto."],
+    ["/superadmin/empresas", "SUPERADMIN", "Empresas de la plataforma"],
   ] as const)("con sesión, %s muestra su página", async (ruta, rol, texto) => {
     iniciarSesionComo(rol);
     abrir(ruta);
     expect(await screen.findByText(texto)).toBeInTheDocument();
+  });
+
+  it("un administrador de empresa no puede entrar a la administración de empresas", async () => {
+    iniciarSesionComo("ADMINISTRADOR");
+    abrir("/superadmin/empresas");
+    expect(await screen.findByText("Acceso restringido")).toBeInTheDocument();
   });
 
   it("un cliente no puede entrar a la administración", async () => {

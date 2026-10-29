@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
-  const { usuario, logout } = useAuth();
+  const { usuario, empresa, logout } = useAuth();
   const navigate = useNavigate();
 
   const salir = () => {
@@ -12,6 +12,7 @@ export default function Navbar() {
 
   const esAdmin = usuario?.rol === "ADMINISTRADOR";
   const esVendedor = usuario?.rol === "VENDEDOR";
+  const esSuperadmin = usuario?.rol === "SUPERADMIN";
 
   return (
     <header className="navbar">
@@ -42,6 +43,12 @@ export default function Navbar() {
           )}
 
           {esAdmin && (
+            <NavLink to="/admin/almacenes">
+              Sedes
+            </NavLink>
+          )}
+
+          {esAdmin && (
             <NavLink to="/admin/usuarios">
               Usuarios
             </NavLink>
@@ -50,6 +57,18 @@ export default function Navbar() {
           {(esAdmin || esVendedor) && (
             <NavLink to="/inventario">
               Inventario
+            </NavLink>
+          )}
+
+          {(esAdmin || esVendedor) && (
+            <NavLink to="/ventas">
+              Ventas
+            </NavLink>
+          )}
+
+          {esSuperadmin && (
+            <NavLink to="/superadmin/empresas">
+              Empresas
             </NavLink>
           )}
         </nav>
@@ -71,6 +90,12 @@ export default function Navbar() {
                   <span className="etiqueta">
                     {usuario.rol}
                   </span>
+
+                  {empresa && (
+                    <span className="texto-ayuda">
+                      {empresa.nombre}
+                    </span>
+                  )}
                 </div>
               </div>
 

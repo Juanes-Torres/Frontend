@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, TOKEN_KEY, apiFetch, json } from "./client";
+import { ApiError, TOKEN_KEY, apiArchivo, apiFetch, json } from "./client";
 
 /** Reemplaza fetch por uno falso que responde con el estado y cuerpo indicados. */
 function responder(status: number, cuerpo?: unknown) {
@@ -106,6 +106,24 @@ describe("apiFetch", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(0);
     expect(error.message).toMatch(/No se pudo conectar/);
+  });
+});
+
+describe("apiArchivo", () => {
+  it("devuelve el archivo con el token incluido", async () => {
+    localStorage.setItem(TOKEN_KEY, "abc123");
+    const fetchFalso = vi.fn().mockResolvedValue(new Response("png", { status: 200, headers: { "Content-Type": "image/png" } }));
+    vi.stubGlobal("fetch", fetchFalso);
+
+    const archivo = await apiArchivo("/api/ventas/1/qr");
+
+    expect(archivo.type).toBe("image/png");
+    expect(fetchFalso.mock.calls[0][1].headers.get("Authorization")).toBe("Bearer abc123");
+  });
+
+  it("convierte el error de la API en ApiError", async () => {
+    responder(404, { mensaje: "No existe la venta" });
+    await expect(apiArchivo("/api/ventas/99/qr")).rejects.toThrow("No existe la venta");
   });
 });
 

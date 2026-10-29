@@ -15,13 +15,15 @@ vi.mock("../api/usuarios", () => ({
   usuariosApi: { listar: vi.fn(), crearEmpleado: vi.fn(), activar: vi.fn(), desactivar: vi.fn() },
 }));
 vi.mock("../api/inventario", () => ({
-  inventarioApi: { listarAlmacenes: vi.fn(), listar: vi.fn(), bajoStock: vi.fn(), registrar: vi.fn(), ajustar: vi.fn() },
+  inventarioApi: {
+    listarAlmacenes: vi.fn(), listar: vi.fn(), bajoStock: vi.fn(), registrar: vi.fn(), ajustar: vi.fn(), cambiarStockMinimo: vi.fn(),
+  },
 }));
 vi.mock("../api/catalogo", () => ({ catalogoApi: { buscarProductos: vi.fn() } }));
 
 const almacenes: Almacen[] = [
-  { id: 1, nombre: "Sede Norte", ciudad: "Bogotá", direccion: null, estado: "ACTIVO" },
-  { id: 2, nombre: "Sede Sur", ciudad: "Cali", direccion: null, estado: "ACTIVO" },
+  { id: 1, nombre: "Sede Norte", ciudad: "Bogotá", direccion: null, estado: "ACTIVO", idEmpresa: 1 },
+  { id: 2, nombre: "Sede Sur", ciudad: "Cali", direccion: null, estado: "ACTIVO", idEmpresa: 1 },
 ];
 
 beforeEach(() => {
@@ -140,7 +142,7 @@ describe("InventarioPage", () => {
     vi.mocked(inventarioApi.listar).mockResolvedValue(filas);
     vi.mocked(inventarioApi.bajoStock).mockResolvedValue([filas[0]]);
     vi.mocked(catalogoApi.buscarProductos).mockResolvedValue([
-      { id: 12, nombre: "Parlante", descripcion: null, precio: 1, marca: null, idCategoria: 1 },
+      { id: 12, nombre: "Parlante", descripcion: null, precio: 1, marca: null, idCategoria: 1, idEmpresa: 1 },
     ]);
   });
 
@@ -208,6 +210,43 @@ describe("InventarioPage", () => {
 
     expect(inventarioApi.ajustar).toHaveBeenCalledWith(100, "ENTRADA", 50);
     expect(await screen.findByText("Stock insuficiente (HTTP 400)")).toBeInTheDocument();
+  });
+
+  it("el administrador cambia el stock mínimo", async () => {
+    vi.mocked(inventarioApi.cambiarStockMinimo).mockResolvedValue({ ...filas[0], stockMinimo: 2 });
+    vi.spyOn(window, "prompt").mockReturnValueOnce(null).mockReturnValueOnce(" ").mockReturnValueOnce("2");
+    iniciarSesionComo("ADMINISTRADOR", { idAlmacen: 1 });
+    renderConApp(<InventarioPage />);
+    const fila = (await screen.findByText("Galaxy S30")).closest("tr")!;
+    const cambiar = within(fila).getByRole("button", { name: "Cambiar" });
+
+    await userEvent.click(cambiar);
+    await userEvent.click(cambiar);
+    expect(inventarioApi.cambiarStockMinimo).not.toHaveBeenCalled();
+
+    await userEvent.click(cambiar);
+    expect(inventarioApi.cambiarStockMinimo).toHaveBeenCalledWith(100, 2);
+    expect(await screen.findByText("Stock mínimo de Galaxy S30 en Sede Norte: 2")).toBeInTheDocument();
+    expect(catalogoApi.buscarProductos).toHaveBeenCalledWith(undefined, undefined, 1);
+  });
+
+  it("muestra el error si el stock mínimo no es válido", async () => {
+    vi.mocked(inventarioApi.cambiarStockMinimo).mockRejectedValue(new ApiError(400, "No puede ser negativo"));
+    vi.spyOn(window, "prompt").mockReturnValue("-1");
+    iniciarSesionComo("ADMINISTRADOR", { idAlmacen: 1 });
+    renderConApp(<InventarioPage />);
+    const fila = (await screen.findByText("Galaxy S30")).closest("tr")!;
+
+    await userEvent.click(within(fila).getByRole("button", { name: "Cambiar" }));
+
+    expect(await screen.findByText("No puede ser negativo (HTTP 400)")).toBeInTheDocument();
+  });
+
+  it("el vendedor no puede cambiar el stock mínimo", async () => {
+    iniciarSesionComo("VENDEDOR", { idAlmacen: 1 });
+    renderConApp(<InventarioPage />);
+    await screen.findByText("Galaxy S30");
+    expect(screen.queryByRole("button", { name: "Cambiar" })).not.toBeInTheDocument();
   });
 
   async function llenarRegistro() {

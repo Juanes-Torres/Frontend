@@ -11,6 +11,9 @@ import AdminProductosPage from "./pages/AdminProductosPage";
 import InventarioPage from "./pages/InventarioPage";
 import AdminUsuariosPage from "./pages/AdminUsuariosPage";
 import RegistroEmpresaPage from "./pages/RegistroEmpresaPage";
+import AlmacenesPage from "./pages/AlmacenesPage";
+import VentasPage from "./pages/VentasPage";
+import SuperadminEmpresasPage from "./pages/SuperadminEmpresasPage";
 
 export default function App() {
   return (
@@ -38,8 +41,20 @@ export default function App() {
               element={<RutaProtegida roles={["ADMINISTRADOR"]}><AdminUsuariosPage /></RutaProtegida>}
             />
             <Route
+              path="/admin/almacenes"
+              element={<RutaProtegida roles={["ADMINISTRADOR"]}><AlmacenesPage /></RutaProtegida>}
+            />
+            <Route
               path="/inventario"
               element={<RutaProtegida roles={["ADMINISTRADOR", "VENDEDOR"]}><InventarioPage /></RutaProtegida>}
+            />
+            <Route
+              path="/ventas"
+              element={<RutaProtegida roles={["ADMINISTRADOR", "VENDEDOR"]}><VentasPage /></RutaProtegida>}
+            />
+            <Route
+              path="/superadmin/empresas"
+              element={<RutaProtegida roles={["SUPERADMIN"]}><SuperadminEmpresasPage /></RutaProtegida>}
             />
 
             <Route path="*" element={<Navigate to="/" replace />} />

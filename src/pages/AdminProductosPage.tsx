@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { catalogoApi } from "../api/catalogo";
 import Mensaje from "../components/Mensaje";
+import { useAuth } from "../context/AuthContext";
 import { formatoPrecio } from "../utils/formato";
 import type { Categoria, Producto } from "../types";
 
@@ -16,19 +17,24 @@ interface Formulario {
 const vacio: Formulario = { nombre: "", descripcion: "", precio: "", marca: "", idCategoria: "" };
 
 export default function AdminProductosPage() {
+  const { usuario } = useAuth();
+  const idEmpresa = usuario?.idEmpresa ?? undefined;
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [form, setForm] = useState<Formulario>(vacio);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [nuevaCategoria, setNuevaCategoria] = useState("");
+  const [codigoBarras, setCodigoBarras] = useState("");
+  const [buscandoCodigo, setBuscandoCodigo] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [exito, setExito] = useState("");
 
+  // Solo los productos de la empresa del administrador
   const cargar = () => {
-    catalogoApi.buscarProductos().then(setProductos).catch(setError);
+    catalogoApi.buscarProductos(undefined, undefined, idEmpresa).then(setProductos).catch(setError);
     catalogoApi.listarCategorias().then(setCategorias).catch(setError);
   };
-  useEffect(cargar, []);
+  useEffect(cargar, [idEmpresa]);
 
   const avisar = (texto: string) => {
     setError(null);
@@ -83,6 +89,40 @@ export default function AdminProductosPage() {
     }
   };
 
+  // Sugiere nombre, marca y descripción con el código de barras (API externa)
+  const buscarCodigo = async () => {
+    setError(null);
+    setExito("");
+    setBuscandoCodigo(true);
+    try {
+      const datos = await catalogoApi.buscarPorCodigoBarras(codigoBarras.trim());
+      setForm({
+        ...form,
+        nombre: datos.nombre ?? form.nombre,
+        marca: datos.marca ?? form.marca,
+        descripcion: datos.descripcion ?? form.descripcion,
+      });
+      const categoria = datos.categoriaSugerida ? ` Categoría sugerida: ${datos.categoriaSugerida}.` : "";
+      setExito(`Datos sugeridos por ${datos.fuente}. Revísalos antes de guardar.${categoria}`);
+    } catch (err) {
+      setError(err);   // ej. 404 si el código no existe en la base externa
+    } finally {
+      setBuscandoCodigo(false);
+    }
+  };
+
+  const renombrarCategoria = async (c: Categoria) => {
+    const nombre = window.prompt(`Nuevo nombre para "${c.nombre}"`, c.nombre)?.trim();
+    if (!nombre || nombre === c.nombre) return;
+    try {
+      await catalogoApi.renombrarCategoria(c.id, nombre);             // PUT
+      avisar("Categoría renombrada");
+      cargar();
+    } catch (err) {
+      setError(err);
+    }
+  };
+
   const crearCategoria = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -106,6 +146,14 @@ export default function AdminProductosPage() {
       <div className="columnas">
         <section>
           <h3>{editandoId ? `Editar producto #${editandoId}` : "Nuevo producto"}</h3>
+          <div className="formulario-linea">
+            <input aria-label="Código de barras" placeholder="Código de barras (ej. 885909950805)"
+                   value={codigoBarras} onChange={(e) => setCodigoBarras(e.target.value)} />
+            <button type="button" className="btn-secundario" onClick={buscarCodigo}
+                    disabled={!codigoBarras.trim() || buscandoCodigo}>
+              {buscandoCodigo ? "Buscando..." : "Autocompletar"}
+            </button>
+          </div>
           <form onSubmit={guardar} className="formulario">
             <label>Nombre<input value={form.nombre} onChange={(e) => cambiar("nombre", e.target.value)} required /></label>
             <label>Descripción<input value={form.descripcion} onChange={(e) => cambiar("descripcion", e.target.value)} /></label>
@@ -133,6 +181,14 @@ export default function AdminProductosPage() {
             <input placeholder="Ej. Smartwatches" value={nuevaCategoria} onChange={(e) => setNuevaCategoria(e.target.value)} required />
             <button type="submit">Agregar</button>
           </form>
+          <ul>
+            {categorias.map((c) => (
+              <li key={c.id}>
+                {c.nombre}{" "}
+                <button className="btn-link" onClick={() => renombrarCategoria(c)}>Renombrar</button>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section>

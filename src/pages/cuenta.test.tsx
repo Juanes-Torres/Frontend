@@ -21,7 +21,7 @@ describe("LoginPage", () => {
   }
 
   it("un cliente entra y vuelve al catálogo", async () => {
-    vi.mocked(usuariosApi.login).mockResolvedValue({ token: "t", tipo: "Bearer", usuario: crearUsuario({ rol: "CLIENTE" }) });
+    vi.mocked(usuariosApi.login).mockResolvedValue({ token: "t", tipo: "Bearer", usuario: crearUsuario({ rol: "CLIENTE" }), empresa: null });
     renderConApp(<LoginPage />, { ruta: "/login" });
 
     await ingresar();
@@ -30,13 +30,27 @@ describe("LoginPage", () => {
     await waitFor(() => expect(screen.getByTestId("ruta-actual")).toHaveTextContent(/^\/$/));
   });
 
-  it("un empleado entra y va al inventario", async () => {
-    vi.mocked(usuariosApi.login).mockResolvedValue({ token: "t", tipo: "Bearer", usuario: crearUsuario({ rol: "VENDEDOR" }) });
+  it.each([
+    ["VENDEDOR", "/ventas"],
+    ["ADMINISTRADOR", "/inventario"],
+    ["SUPERADMIN", "/superadmin/empresas"],
+  ] as const)("un %s entra y va a %s", async (rol, destino) => {
+    vi.mocked(usuariosApi.login).mockResolvedValue({ token: "t", tipo: "Bearer", usuario: crearUsuario({ rol }), empresa: null });
     renderConApp(<LoginPage />, { ruta: "/login" });
 
     await ingresar();
 
-    await waitFor(() => expect(screen.getByTestId("ruta-actual")).toHaveTextContent("/inventario"));
+    await waitFor(() => expect(screen.getByTestId("ruta-actual")).toHaveTextContent(destino));
+  });
+
+  it("explica por qué no puede entrar si su empresa no está aprobada", async () => {
+    vi.mocked(usuariosApi.login).mockRejectedValue(
+      new ApiError(401, "La empresa aún no ha sido aprobada por el superadministrador"));
+    renderConApp(<LoginPage />, { ruta: "/login" });
+
+    await ingresar();
+
+    expect(await screen.findByText(/aún no ha sido aprobada/)).toBeInTheDocument();
   });
 
   it("muestra el error de credenciales y se queda en el login", async () => {
@@ -100,6 +114,7 @@ describe("PerfilPage", () => {
     expect(await screen.findByText("Mi perfil")).toBeInTheDocument();
     expect(screen.getByText("ana@kairos.com")).toBeInTheDocument();
     expect(screen.getByText("#2")).toBeInTheDocument();
+    expect(screen.getByText("Tecno SAS (NIT 900111222-3)")).toBeInTheDocument();
     expect(screen.getByText("Activo")).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre")).toHaveValue("Ana Pérez");
   });

@@ -3,6 +3,15 @@ import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Mensaje from "../components/Mensaje";
+import type { Rol } from "../types";
+
+// Página de inicio de cada rol después de iniciar sesión
+const inicioPorRol: Record<Rol, string> = {
+  CLIENTE: "/",
+  VENDEDOR: "/ventas",
+  ADMINISTRADOR: "/inventario",
+  SUPERADMIN: "/superadmin/empresas",
+};
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,9 +30,9 @@ export default function LoginPage() {
     setCargando(true);
     try {
       const usuario = await login(email, password);   // 1. llama a POST /api/usuarios/login
-      navigate(usuario.rol === "CLIENTE" ? "/" : "/inventario");  // 2. redirige según el rol
+      navigate(inicioPorRol[usuario.rol]);           // 2. redirige según el rol
     } catch (err) {
-      setError(err);                  // 3. muestra el error de la API (ej. 401)
+      setError(err);                  // 3. muestra el error (ej. 401, o empresa pendiente de aprobación)
     } finally {
       setCargando(false);
     }
@@ -48,6 +57,7 @@ export default function LoginPage() {
       </form>
 
       <p>¿No tienes cuenta? <Link to="/registro">Regístrate</Link></p>
+      <p>¿Representas a una empresa? <Link to="/registro-empresa">Registra tu empresa</Link></p>
     </div>
   );
 }

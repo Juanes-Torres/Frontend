@@ -6,7 +6,7 @@ import Mensaje from "../components/Mensaje";
 import type { Usuario } from "../types";
 
 export default function PerfilPage() {
-  const { actualizarUsuario } = useAuth();
+  const { empresa, actualizarUsuario } = useAuth();
   const [perfil, setPerfil] = useState<Usuario | null>(null);
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -50,6 +50,7 @@ export default function PerfilPage() {
         <dt>Rol</dt><dd>{perfil.rol}</dd>
         <dt>Fecha de registro</dt><dd>{perfil.fechaRegistro}</dd>
         <dt>Estado</dt><dd>{perfil.activo ? "Activo" : "Inactivo"}</dd>
+        {empresa && (<><dt>Empresa</dt><dd>{empresa.nombre} (NIT {empresa.nit})</dd></>)}
         {perfil.idAlmacen && (<><dt>Almacén</dt><dd>#{perfil.idAlmacen}</dd></>)}
       </dl>
 
